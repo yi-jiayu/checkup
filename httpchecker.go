@@ -3,7 +3,6 @@ package checkup
 import (
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -64,6 +63,10 @@ type HTTPChecker struct {
 	// Headers contains headers to added to the request
 	// that is sent for the check
 	Headers http.Header `json:"headers,omitempty"`
+
+	// Timeout specifies the total timeout for the request.
+	// It will be used as http.Client's timeout field.
+	Timeout time.Duration `json:"timeout,omitempty"`
 }
 
 // Check performs checks using c according to its configuration.
@@ -73,7 +76,10 @@ func (c HTTPChecker) Check() (Result, error) {
 		c.Attempts = 1
 	}
 	if c.Client == nil {
-		c.Client = DefaultHTTPClient
+		c.Client = newHTTPClient()
+	}
+	if c.Timeout > 0 {
+		c.Client.Timeout = c.Timeout
 	}
 	if c.UpStatus == 0 {
 		c.UpStatus = http.StatusOK
@@ -176,24 +182,19 @@ func (c HTTPChecker) checkDown(resp *http.Response) error {
 	return nil
 }
 
-// DefaultHTTPClient is used when no other http.Client
+// newHTTPClient will be used when no other http.Client
 // is specified on a HTTPChecker.
-var DefaultHTTPClient = &http.Client{
-	Transport: &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		Dial: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 0,
-		}).Dial,
-		TLSHandshakeTimeout:   5 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		MaxIdleConnsPerHost:   1,
-		DisableCompression:    true,
-		DisableKeepAlives:     true,
-		ResponseHeaderTimeout: 5 * time.Second,
-	},
-	CheckRedirect: func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	},
-	Timeout: 10 * time.Second,
+func newHTTPClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			Proxy:               http.ProxyFromEnvironment,
+			MaxIdleConnsPerHost: 1,
+			DisableCompression:  true,
+			DisableKeepAlives:   true,
+		},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Timeout: 10 * time.Second,
+	}
 }

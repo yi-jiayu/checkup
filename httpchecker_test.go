@@ -65,8 +65,19 @@ func TestHTTPChecker(t *testing.T) {
 		t.Errorf("Expected result.Down=%v, got %v", want, got)
 	}
 
+	// Test with a timeout
+	hc.Timeout = 1 * time.Nanosecond
+	result, err = hc.Check()
+	if err != nil {
+		t.Errorf("Didn't expect an error: %v", err)
+	}
+	if got, want := result.Down, true; got != want {
+		t.Errorf("Expected result.Down=%v, got %v", want, got)
+	}
+
 	hc.ThresholdRTT = 0
 	hc.MustContain = "up"
+	hc.Timeout = 0
 	result, err = hc.Check()
 	if err != nil {
 		t.Errorf("Didn't expect an error: %v", err)
