@@ -7,8 +7,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/sourcegraph/checkup"
 	"github.com/spf13/cobra"
+
+	"github.com/yi-jiayu/checkup"
 )
 
 var configFile string

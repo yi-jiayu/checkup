@@ -6,8 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sourcegraph/checkup"
 	"github.com/spf13/cobra"
+
+	"github.com/yi-jiayu/checkup"
 )
 
 var provisionCmd = &cobra.Command{
